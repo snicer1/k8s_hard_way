@@ -43,3 +43,8 @@ variable "subnet_id" {
   description = "ID of the subnet"
   type        = string
 }
+
+variable "key_path_jumpstations" {
+  description = "Path to the private key for the EC2 instance"
+  type        = string 
+}

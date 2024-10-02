@@ -36,12 +36,19 @@ resource "aws_instance" "jumpstation" {
     Name = "Jumpstation"
   })
 
-  user_data = base64encode(file("../templates/jumpstation_startup_script.sh"))
+  user_data = base64encode(file("./templates/jumpstation_startup_script.sh"))
+}
+
+resource "tls_private_key" "worker_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
 }
 
 
+
+
 resource "null_resource" "generate_key_pair" {
-  depends_on = [aws_instance.jump_station]
+  depends_on = [aws_instance.jumpstation]
 
   provisioner "remote-exec" {
     inline = [
@@ -51,20 +58,17 @@ resource "null_resource" "generate_key_pair" {
 
     connection {
       type        = "ssh"
-      user        = "ec2-user"  # or the appropriate user for your AMI
-      private_key = file("path/to/your/existing-key-pair.pem")
-      host        = aws_instance.jump_station.public_ip
+      user        = "ubuntu"  # or the appropriate user for your AMI
+      private_key = file(var.private_key_path)
+      host        = aws_instance.jumpstation.public_ip
     }
   }
 }
 
 data "external" "public_key" {
-  depends_on = [null_resource.generate_key_pair]
-
   program = ["ssh", 
-    "-i", "path/to/your/existing-key-pair.pem",
+    "-i", "${var.private_key_path}",
     "-o", "StrictHostKeyChecking=no",
-    "ec2-user@${aws_instance.jump_station.public_ip}",
-    "cat ~/.ssh/exec_node_key.pub"
-  ]
+    "ubuntu@${aws_instance.jumpstation.public_ip}",
+    "bash", "-c", "if [ -f ~/.ssh/exec_node_key.pub ]; then echo '{\"public_key\": \"'$(cat ~/.ssh/exec_node_key.pub)'\"}'; else echo '{\"error\": \"File not found\"}'; fi"]
 }

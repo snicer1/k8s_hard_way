@@ -29,3 +29,8 @@ variable "subnet_id" {
   description = "ID of the subnet"
   type        = string
 }
+
+variable "private_key_path" {
+  description = "Path to the private key file"
+  type        = string
+}

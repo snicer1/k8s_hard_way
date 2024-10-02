@@ -29,4 +29,5 @@ module "jumpstation" {
     key_name = var.key_name
     ami_id = var.jumpstation_ami_id
     instance_type = var.instance_type
+    private_key_path = var.key_path_jumpstations
 }
