@@ -7,7 +7,7 @@ resource "aws_security_group" "jumpstation_sg" {
   ingress {
     from_port   = 22
     to_port     = 22
-    protocol    = "tcp"
+    protocol    = "tcp" 
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -36,7 +36,7 @@ resource "aws_instance" "jumpstation" {
     Name = "Jumpstation"
   })
 
-  user_data = base64encode(file("./templates/jumpstation_startup_script.sh"))
+  user_data = base64encode(file("./scripts/jumpstation_startup.sh"))
 }
 
 resource "tls_private_key" "worker_key" {
@@ -45,30 +45,18 @@ resource "tls_private_key" "worker_key" {
 }
 
 
-
-
-resource "null_resource" "generate_key_pair" {
+resource "null_resource" "copy_key_to_jumpstation" {
   depends_on = [aws_instance.jumpstation]
 
-  provisioner "remote-exec" {
-    inline = [
-      "ssh-keygen -t rsa -b 2048 -f ~/.ssh/exec_node_key -N ''",
-      "echo 'Key pair generated on jump station'",
-    ]
+  provisioner "file" {
+    content     = tls_private_key.worker_key.private_key_pem
+    destination = "/home/ubuntu/.ssh/worker_key.pem"
 
     connection {
       type        = "ssh"
-      user        = "ubuntu"  # or the appropriate user for your AMI
+      user        = "ubuntu"
       private_key = file(var.private_key_path)
       host        = aws_instance.jumpstation.public_ip
     }
   }
-}
-
-data "external" "public_key" {
-  program = ["ssh", 
-    "-i", "${var.private_key_path}",
-    "-o", "StrictHostKeyChecking=no",
-    "ubuntu@${aws_instance.jumpstation.public_ip}",
-    "bash", "-c", "if [ -f ~/.ssh/exec_node_key.pub ]; then echo '{\"public_key\": \"'$(cat ~/.ssh/exec_node_key.pub)'\"}'; else echo '{\"error\": \"File not found\"}'; fi"]
 }

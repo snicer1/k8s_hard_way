@@ -19,8 +19,14 @@ variable "instance_type" {
 }
 
 variable "jumpstation_ami_id" {
-  description = "AMI ID for the EC2 instance"
+  description = "AMI ID for the EC2 instance - jump station"
   type        = string
+}
+
+variable "workernode_ami_id" {
+  description = "AMI ID for the EC2 instance - worker node"
+  type        = string
+
 }
 
 variable "tags" {
